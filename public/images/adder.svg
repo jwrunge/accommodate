@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 50 50"
+   height="50mm"
+   width="50mm">
+  <defs
+     id="defs2" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     transform="translate(0,-247)"
+     id="layer1">
+    <path
+       transform="matrix(0.26458333,0,0,0.26458333,0,247)"
+       id="path817"
+       d="M 94.845703 2.2460938 A 92.598425 92.598425 0 0 0 2.2460938 94.845703 A 92.598425 92.598425 0 0 0 94.845703 187.44336 A 92.598425 92.598425 0 0 0 187.44336 94.845703 A 92.598425 92.598425 0 0 0 94.845703 2.2460938 z M 86.285156 44.214844 L 102.69141 44.214844 L 102.69141 86.753906 L 142.53516 86.753906 L 142.53516 102.22266 L 102.69141 102.22266 L 102.69141 144.76172 L 86.285156 144.76172 L 86.285156 102.22266 L 46.441406 102.22266 L 46.441406 86.753906 L 86.285156 86.753906 L 86.285156 44.214844 z "
+       style="opacity:1;fill:#37718e;fill-opacity:1;stroke:none;stroke-width:1.00157475;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <g
+       id="text821"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:63.5px;line-height:1.25;font-family:Corbel;-inkscape-font-specification:'Corbel, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       aria-label="+" />
+  </g>
+</svg>
