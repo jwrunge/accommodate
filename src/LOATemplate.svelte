@@ -4,8 +4,8 @@
     import { settings, formatText } from './store.js'
     import Modal from './widgets/Modal.svelte'
     import PDF from './PDF.svelte'
-    import { printPDF, convertToHTML } from './logic/pdf.js'
-    const cp = require("child_process")
+    import { printPDF } from './logic/pdf.js'
+    const {shell} = require('electron')
 
     const fs = require('fs')
     const app = require('electron').remote.app
@@ -18,40 +18,51 @@
     let previewModalOpen = false
     let docErrorModalOpen = false
 
-    let headerData = fs.existsSync(root + '/appdata/header.json') ? JSON.parse(fs.readFileSync(root + '/appdata/header.json')) : []
-    let bodyData = fs.existsSync(root + '/appdata/body.json') ? JSON.parse(fs.readFileSync(root + '/appdata/body.json')) : []
-    let footerData = fs.existsSync(root + '/appdata/footer.json') ? JSON.parse(fs.readFileSync(root + '/appdata/footer.json')) : []
+    let headerData = fs.existsSync(root + '/appdata/header.accom') ? fs.readFileSync(root + '/appdata/header.accom') : ""
+    let bodyData = fs.existsSync(root + '/appdata/body.accom') ? fs.readFileSync(root + '/appdata/body.accom') : ""
+    let footerData = fs.existsSync(root + '/appdata/footer.accom') ? fs.readFileSync(root + '/appdata/footer.accom') : ""
 
-    let sampleData = {
-        fname: "Sample",
-        lname: "Person"
-    }
+    let sampleData = [
+        { key: "first name", value: "Sample"},
+        { key: "last name", value: formatText($settings.students, false, true)},
+        { key: "id", value: "12345" },
+        { key: "date", value: "" },
+        // { key: formatText($settings.services, true, false), value: "No " + formatText($settings.services, true, false) + " listed" },
+        { key: formatText($settings.services, true, false), value: [{name: "Good times", content: "For all"}, {name: "Love it", content: "Don't list it"}] },
+        { key: formatText($settings.students, false, false) + " notes", value: "No notes listed" },
+    ]
 
     let preview = ()=> {
         previewModalOpen = true
+
+        //Get date
+        let today = new Date()
+        sampleData[3].value = (today.getMonth() + 1) + "/" + today.getDate() + "/" + today.getFullYear()
         
-        printPDF(headerData, bodyData, footerData, sampleData).then(()=> {
+        printPDF(headerData, bodyData, footerData, sampleData).then(pdf=> {
+            fs.writeFileSync(root + '/appdata/doc.pdf', pdf)
             previewModalOpen = false
-            cp.exec(root + '/appdata/newerpdf.pdf')
+            shell.openItem(root + "/appdata/doc.pdf")
         })
-        .catch(()=> {
+        .catch(e=> {
+            console.log(e)
             previewModalOpen = false
             docErrorModalOpen = true
         })
     }
 
     let saveHeader = (e)=> {
-        fs.writeFileSync(root + '/appdata/header.json', JSON.stringify(e.detail))
+        fs.writeFileSync(root + '/appdata/header.accom', e.detail)
         headerData = e.detail
     }
 
     let saveBody = (e)=> {
-        fs.writeFileSync(root + '/appdata/body.json', JSON.stringify(e.detail))
+        fs.writeFileSync(root + '/appdata/body.accom', e.detail)
         bodyData = e.detail
     }
 
     let saveFooter = (e)=> {
-        fs.writeFileSync(root + '/appdata/footer.json', JSON.stringify(e.detail))
+        fs.writeFileSync(root + '/appdata/footer.accom', e.detail)
         footerData = e.detail
     }
     
@@ -71,26 +82,18 @@
     <h2>{formatText($settings.abbrev, false, false, true)} Template</h2>
     <p>Set up your {formatText($settings.abbrev, false, false, true)} template below.</p>
 
-    <h3>Edit Sections</h3>
+    <PDF pdfSettings={{editing: 'body', placeholder: "Write your document here!" }} content={bodyData} on:forceClose={()=>{ pdfBodyModalOpen = false }} on:save={saveBody} on:preview={preview}></PDF>
+    <!-- <h3>Edit Sections</h3>
     <ul>
         <li><a href="heading" on:click|preventDefault={()=>{pdfHeaderModalOpen = true}}>Header</a> - The header appears at the top of every page.</li>
         <li><a href="body" on:click|preventDefault={()=>{pdfBodyModalOpen = true}}>Body</a> - The body makes up the majority of your document, and may span multiple pages.</li>
         <li><a href="footer" on:click|preventDefault={()=>{pdfFooterModalOpen = true}}>Footer</a> - The footer appears at the bottom of each page.</li>
-    </ul>
-    <button type='submit' on:click|preventDefault={preview}>Preview</button>
-
-    <h3>Tips</h3>
-    <p>Here are some things to consider as you create your template:</p>
-    <ul>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-    </ul>
+    </ul> -->
+    
+    <p><strong>*NOTE*</strong> - Changing terminology settings on the "Settings" page will change how some variables are processed in the template. You may need to edit your template after terminology changes.</p>
 </div>
 
-{#if pdfHeaderModalOpen}
+<!-- {#if pdfHeaderModalOpen}
     <Modal on:forceClose={()=>{ pdfHeaderModalOpen = false }}>
         <PDF pdfSettings={{editing: 'header', placeholder: "Your header here..." }} content={headerData} on:forceClose={()=>{ pdfHeaderModalOpen = false }} on:save={saveHeader}></PDF>
     </Modal>
@@ -104,7 +107,7 @@
     <Modal on:forceClose={()=>{ pdfFooterModalOpen = false }}>
         <PDF pdfSettings={{editing: 'footer', placeholder: "Your footer here..." }} content={footerData} on:forceClose={()=>{ pdfFooterModalOpen = false }} on:save={saveFooter}></PDF>
     </Modal>
-{/if}
+{/if} -->
 {#if previewModalOpen}
     <Modal on:forceClose={()=>{ previewModalOpen = false }}>
         <h3>Building PDF</h3>

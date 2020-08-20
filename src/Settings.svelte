@@ -1,10 +1,12 @@
 <script>
-    import {pdf} from './logic/pdf.js'
     import { fly, scale } from 'svelte/transition'
     import { settings, changeSettings, formatText } from './store.js'
     import Modal from "./widgets/Modal.svelte"
     const {dialog} = require('electron').remote
     import {onMount} from 'svelte'
+    const fs = require('fs')
+    const app = require('electron').remote.app
+    const root = app.getAppPath()
 
     const getFolder = (alter)=> {
         dialog.showOpenDialog({
@@ -16,6 +18,11 @@
     }
     
     let showPagesModal = false
+    let showBackupSuccessfulModal = false
+    let showRestoreSuccessfulModal = false
+    let clearDataModal = false
+    let showDeletedModal = false
+
     let pages = [
         {name: "Write " + formatText($settings.abbrev, false, false, true), value: "#write", selected: false},
         {name: formatText($settings.students, true, true), selected: false, value: "#students"},
@@ -68,6 +75,60 @@
     let savePageSettings = ()=> {
         $settings.passwords[curPassIndex].pages = pages.filter(page=>page.selected)
         showPagesModal = false
+    }
+
+    function backup() {
+        let now = new Date()
+        let backupDate = (now.getMonth() + 1) + "." + now.getDate() + "." + now.getFullYear() + "-" + now.getTime()
+
+        if(!fs.existsSync($settings.backupdir + '/' + backupDate)) {
+            fs.mkdirSync($settings.backupdir + '/' + backupDate)
+        }
+
+        fs.copyFile($settings.databasedir + '/accoms.db', $settings.backupdir + '/' + backupDate + '/accoms.db', fs.constants.COPYFILE_EXCL, (err)=> {
+            if(err) throw(err)
+            fs.copyFile($settings.databasedir + '/loas.db', $settings.backupdir + '/' + backupDate + '/loas.db', fs.constants.COPYFILE_EXCL, (err)=> {
+                if(err) throw(err)
+                fs.copyFile($settings.databasedir + '/records.db', $settings.backupdir + '/' + backupDate + '/records.db', fs.constants.COPYFILE_EXCL, (err)=> {
+                    if(err) throw(err)
+                    showBackupSuccessfulModal = true
+                })
+            })
+        })
+    }
+
+    function restoreBackup() {
+        dialog.showOpenDialog({
+            properties: ['openDirectory'],
+            defaultPath: $settings.backupdir
+        }).then(res=> {
+            if(res.filePaths[0] != undefined) {
+                let restoreFrom = res.filePaths[0]
+
+                fs.copyFile(restoreFrom + "/accoms.db", $settings.databasedir + '/accoms.db', fs.constants.COPYFILE_FICLONE, (err)=> {
+                    if(err) throw(err)
+                    fs.copyFile(restoreFrom + "/loas.db", $settings.databasedir + '/loas.db', fs.constants.COPYFILE_FICLONE, (err)=> {
+                        if(err) throw(err)
+                        fs.copyFile(restoreFrom + '/records.db', $settings.databasedir + '/records.db', fs.constants.COPYFILE_FICLONE, (err)=> {
+                            if(err) throw(err)
+                            showRestoreSuccessfulModal = true
+                        })
+                    })
+                })
+            }
+        })
+    }
+
+    function clearData() {
+        clearDataModal = false
+        
+        fs.unlink($settings.databasedir + "/accoms.db", ()=> {
+            fs.unlink($settings.databasedir + "/loas.db", ()=> {
+                fs.unlink($settings.databasedir + "/records.db", ()=> {
+                    showDeletedModal = true
+                })
+            })
+        })
     }
 
     $: $settings, save()
@@ -139,11 +200,11 @@
     <p>The database files for this app are located here: <a href='changepath' on:click|preventDefault={()=>{getFolder('databasedir')}}>{$settings.databasedir}</a></p>
     <p>The database backups are located here: <a href='changepath' on:click|preventDefault={()=>{getFolder('backupdir')}}>{$settings.backupdir}</a></p>
     <h3>Manage Data</h3>
-    <p><button type='submit' class='blue' on:click|preventDefault={()=>{}}>Import data</button>You can import data <em>en masse</em> by loading a CSV file. Records with no specified ID will be assigned one; records with IDs that already exist will be replaced by the imported data. CSV files can be created in most spreadsheet programs, including Microsoft Excel.</p>
+    <!-- <p><button type='submit' class='blue' on:click|preventDefault={()=>{}}>Import data</button>You can import data <em>en masse</em> by loading a CSV file. Records with no specified ID will be assigned one; records with IDs that already exist will be replaced by the imported data. CSV files can be created in most spreadsheet programs, including Microsoft Excel.</p> -->
     <div class="inline">
-        <button type='submit' class='blue' on:click|preventDefault={()=>{}}>Back up data</button>
-        <button type='submit' class='blue' on:click|preventDefault={()=>{}}>Restore backup</button>
-        <button type='submit' on:click|preventDefault={()=>{}}>Clear data</button>
+        <button type='submit' class='blue' on:click|preventDefault={backup}>Back up data</button>
+        <button type='submit' class='blue' on:click|preventDefault={restoreBackup}>Restore backup</button>
+        <button type='submit' on:click|preventDefault={()=>{ clearDataModal = true }}>Clear data</button>
     </div>
 </div>
 
@@ -156,5 +217,40 @@
             {/each}
         </ul>
         <button class='centered blue' type='submit' on:click|preventDefault={savePageSettings}>OK</button>
+    </Modal>
+{/if}
+
+{#if showBackupSuccessfulModal}
+    <Modal on:forceClose={()=>{ showBackupSuccessfulModal = false }}>
+        <h3>Backup Successful</h3>
+        <p>All data has been backed up to a folder marked with the current date and time.</p>
+        <button class='centered blue' type='submit' on:click|preventDefault={()=> { showBackupSuccessfulModal = false}}>OK</button>
+    </Modal>
+{/if}
+
+{#if showRestoreSuccessfulModal}
+    <Modal on:forceClose={()=>{ showRestoreSuccessfulModal = false }}>
+        <h3>Restore Successful</h3>
+        <p>All data has been restored from the selected folder.</p>
+        <button class='centered blue' type='submit' on:click|preventDefault={()=> { showRestoreSuccessfulModal = false}}>OK</button>
+    </Modal>
+{/if}
+
+{#if clearDataModal}
+    <Modal on:forceClose={()=>{ clearDataModal = false }}>
+        <h3>Clear Data?</h3>
+        <p>We strongly recommend that you <strong>back up your data first</strong> before clearing the database.</p>
+        <div class="centered inline">
+            <button type='submit' on:click|preventDefault={clearData}>Clear Data</button>
+            <button class='blue' type='submit' on:click|preventDefault={()=> { clearDataModal = false}}>Cancel</button>
+        </div>
+    </Modal>
+{/if}
+
+{#if showDeletedModal}
+    <Modal on:forceClose={()=>{ showDeletedModal = false }}>
+        <h3>Data Deletion Successful</h3>
+        <p>All data has been cleared from the database.</p>
+        <button class='centered blue' type='submit' on:click|preventDefault={()=> { showDeletedModal = false}}>OK</button>
     </Modal>
 {/if}

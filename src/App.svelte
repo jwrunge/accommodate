@@ -428,7 +428,7 @@
             <li class:active={curPage == '#accommodations'}><a href='#accommodations'>{formatText($settings.services, true, true)}</a></li>
             <li class:active={curPage == '#pdf'}><a href='#pdf'>{formatText($settings.abbrev, false, false, true)} Template</a></li>
             <li class:active={curPage == '#settings'}><a href='#settings'>Settings</a></li>
-            <li class:active={curPage == '#reports'}><a href='#reports'>Reports</a></li>
+            <!-- <li class:active={curPage == '#reports'}><a href='#reports'>Reports</a></li> -->
         </ul>
     </nav>
     <div class="inner" bind:this={viewarea}>

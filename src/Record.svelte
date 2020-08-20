@@ -4,6 +4,13 @@
     import { loadRecords } from './logic/data.js'
     import { settings, formatText } from './store.js'
     import Modal from "./widgets/Modal.svelte"
+    import { printPDF } from './logic/pdf.js'
+    const {shell} = require('electron')
+
+    const fs = require('fs')
+    const app = require('electron').remote.app
+
+    const root = app.getAppPath()
 
     let sid = ""
     let record = null
@@ -11,11 +18,38 @@
     let currentRecord = {}
     let recordModalOpen = false
 
+    let bodyData
+
+    function printDoc(data) {
+        let formattedData = [
+            { key: "first name", value: data.student.fname},
+            { key: "last name", value: data.student.lname},
+            { key: "id", value: data.student._id },
+            { key: "date", value: (new Date(data.dateUpdated).getMonth() + 1) + "/" + new Date(data.dateUpdated).getDate() + "/" + new Date(data.dateUpdated).getFullYear() },
+            { key: formatText($settings.services, true, false), value: data.accoms },
+            { key: formatText($settings.students, false, false) + " notes", value: data.studentNotes },
+        ]
+
+        printPDF(" ", bodyData, " ", formattedData).then(pdf=> {
+            fs.writeFileSync(root + '/appdata/target.pdf', pdf)
+            shell.openItem(root + "/appdata/target.pdf")
+        })
+        .catch(e=> {
+            console.log(e)
+            previewModalOpen = false
+            docErrorModalOpen = true
+        })
+
+        currentRecord = {}
+    }
+
     onMount(()=>{
         sid = window.location.hash.split('/')[1]
         loadRecords(sid, $settings.databasedir).then((result)=> {
             record = result
         })
+
+        bodyData = fs.existsSync(root + '/appdata/body.accom') ? fs.readFileSync(root + '/appdata/body.accom') : ""
     })
 
 </script>
@@ -92,7 +126,7 @@
 
         <div class="align-ends">
             <button class='centered blue' type='submit' on:click|preventDefault={()=> {  recordModalOpen = false; currentRecord = {} } }>OK</button>
-            <button class='centered' type='submit' on:click|preventDefault={()=> {  recordModalOpen = false; currentRecord = {} } }>Print</button>
+            <button class='centered' type='submit' on:click|preventDefault={()=> {  recordModalOpen = false; printDoc(currentRecord) } }>Print</button>
         </div>
     </Modal>
 {/if}

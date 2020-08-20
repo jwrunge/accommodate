@@ -1,136 +1,103 @@
 const puppeteer = require('puppeteer')
-import { QuillDeltaToHtmlConverter } from 'quill-delta-to-html'
 const app = require('electron').remote.app
 const fs = require('fs')
 
-const root = app.getAppPath()
+async function formatForAssembly(html, section, data) {
+    html = html.toString()
 
-export function convertToHTML(delta, data = []) {
-    let config = {
-        inlineStyles: {}
+    for(let datum of data) {
+        let r = new RegExp("\\$\\{" + datum.key + "\\}", "g")
+
+        if(Array.isArray(datum.value) && datum.value[0].name && datum.value[0].content)
+        {
+            let replacer = "<div class='listed-accommodations'>"
+            for(let val of datum.value) {
+                let styleAdd = ""
+                if(replacer) styleAdd = "margin-top: .5em; "
+
+                replacer += "<div style='" + styleAdd + "'><strong>" + val.name + "</strong><div>" + val.content + "</div></div>"
+            }
+            replacer += "</div>"
+
+            html = html.replace(r, replacer)
+        }
+        else
+            html = html.replace(r, datum.value)
     }
-    let converter = new QuillDeltaToHtmlConverter(delta.ops, config)
-    converter.afterRender((groupType, htmlString)=> {
-        Object.keys(data).forEach(x=>{
-            htmlString = htmlString.replace('{$' + x + '}', data[x])
-        })
-        return htmlString
-    })
-
-    return converter.convert()
-}
-
-export async function formatHTML(html, section) {
     
+    html = "<div class=\"" + section + "\">" + html + "</div>"
+    let height = 0
 
-    //Get height (for header and footer)
-    //Code here!
-}
-
-export async function formatForAssembly(html, section) {
-    html.replace(/“/g, '&quot;').replace(/”/g, '&quot;').replace(/'/g, '&quot;').replace(/'/g, '&apos;')
-
-    let wrapper = document.createElement('div')
-    wrapper.classList.add('sectionWrapper')
-    wrapper.style.visibility = 'hidden'
-    wrapper.style.position = 'fixed'
-    wrapper.style.top = 0
-    wrapper.style.left = 0
-
-    //Remove any cursor object
-    let cursors = document.querySelectorAll('span.ql-cursor')
-    console.log(cursors)
-    cursors.forEach(cursor => cursor.remove())
-
-    //Cut unnecessary starting/ending space
-    let first11 = html.substring(0, 11)
-    let mainBody = html.substring(11, html.length - 11)
-    let last11 = html.substring(html.length - 11, html.length)
-
-    first11 = first11.replace(/<p><br><\/p>/g, "")
-    last11 = last11.replace(/<p><br><\/p>/g, "")
-    if(section != 'body') 
-        wrapper.innerHTML = `<style>#header, #footer { padding: 0 !important; }</style> <div style='font-size: 12px; margin: 0 40px; padding: 40px 0;'>` + first11 + mainBody + last11 + "</div>"
-    else
-        wrapper.innerHTML = first11 + mainBody + last11
-
-    //Set table settings
-    let tables = wrapper.querySelectorAll('table')
-    if(tables) {
-        tables.forEach((table)=> {
-            let tableWidth = parseInt(table.style.width)
-            table.style = "width: 100%;"
-
-            let cols = table.querySelectorAll('col')
-            let colPercents = []
-            cols.forEach((col)=> {
-                let colWidth = parseInt(col.width)
-                let newWidth = (colWidth / tableWidth * 100) + "%"
-                colPercents.push(newWidth)
-            })
-
-            table.removeChild(table.querySelector('colgroup'))
-
-            let tds = table.querySelectorAll('td')
-            tds.forEach((td, index)=> {
-                let commonStyle = 'border: none; overflow: hidden;'
-                if(index < colPercents.length)
-                    td.style = commonStyle + " width: " + colPercents[index] + ";"
-                else
-                    td.style = commonStyle
-
-                let tableImgs = td.querySelectorAll('img')
-                tableImgs.forEach(im => im.style = 'width: 100%;')
-            })
-        })
-    }
-
-    let wrapperStyle = document.createElement('style')
-    wrapperStyle.innerHTML = ".ql-align-right { text-align: right; } .ql-align-center { text-align: center; } .ql-align-justify { text-align: justified; }"
-    wrapper.appendChild(wrapperStyle)
-
-    //Get height for header/footer
     if(section != 'body') {
-        document.body.appendChild(wrapper)
+        html += "<style>." + section + " { transform: scale(.77) translateX(-7%); font-size: 1em; padding: 20px 0; width: 200%; margin: 0 auto; }</style>"
 
-        return new Promise((resolve, reject)=> {
-            setTimeout(()=> {
-                let innerDiv = wrapper.querySelector('div')
-                let height = innerDiv.clientHeight + parseInt(innerDiv.style.marginTop) + parseInt(innerDiv.style.marginBottom) 
-                resolve({html: wrapper.innerHTML, height})
-                wrapper.remove()
-            }, 100)
-        })
+        //Add a DOM node to test the height of a header or footer
+        let heightBlock = document.createElement('div')
+        heightBlock.innerHTML = html
+        heightBlock.style.width = "612pt"
+
+        document.body.appendChild(heightBlock)
+        height = heightBlock.offsetHeight + 10
+        heightBlock.remove()
+    }
+    else {
+        //Add a DOM node to copy font settings to the inner div
+        let block = document.createElement('div')
+        block.innerHTML = html
+
+        document.body.appendChild(block)
+        let accomBlocks = block.querySelectorAll('.listed-accommodations')
+        
+        if(accomBlocks && accomBlocks.length) {
+            for(let blk of accomBlocks) {
+                let p = blk.previousSibling
+                let span = p.children[0]
+                let style = span.getAttribute('style')
+
+                blk.style = style
+                p.remove()
+            }
+
+            html = block.innerHTML
+
+            block.remove()
+        }
     }
 
-    else return {html: wrapper.innerHTML}
+    return {
+        height,
+        html
+    }
 }
-
-
 
 export async function printPDF(header, body, footer, data) {
-    let formattedHeader = await formatForAssembly(header, 'header')
-    let formattedBody = await formatForAssembly(body, 'body')
-    let formattedFooter = await formatForAssembly(footer, 'footer')
+    // let formattedHeader = await formatForAssembly(header, 'header', data)
+    let formattedBody = await formatForAssembly(body, 'body', data)
+    // let formattedFooter = await formatForAssembly(footer, 'footer', data)
 
     const browser = await puppeteer.launch({headless: true})
     const page = await browser.newPage()
     await page.goto('data:text/html,' + formattedBody.html, { waitUntil: 'networkidle0' })
 
     const pdf = await page.pdf({ 
-        path: root + '/appdata/newerpdf.pdf',
         displayHeaderFooter: true,
         format: "A4",
-        headerTemplate: formattedHeader.html,
-        footerTemplate: formattedFooter.html,
+        headerTemplate: " ",
+        footerTemplate: " ",
+        // margin: {
+        //     top: formattedHeader.height > 40 ? (formattedHeader.height) + 'px': "40px",
+        //     bottom: formattedFooter.height > 40 ? (formattedFooter.height) + 'px': "40px",
+        //     left: "40px",
+        //     right: "40px",
+        // }
         margin: {
-            top: formattedHeader.height > 40 ? (formattedHeader.height) + 'px': "40px",
-            bottom: formattedFooter.height > 40 ? (formattedFooter.height) + 'px': "40px",
+            top: "40px",
+            bottom: "40px",
             left: "40px",
-            right: "40px",
-        },
-        printBackground: true
+            right: "40px"
+        }
     })
 
     await browser.close()
+    return pdf
 }
