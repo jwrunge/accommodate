@@ -36,6 +36,7 @@
     let curPassIndex = 0
 
     let save = ()=> {
+        console.log('saving')
         if(saveTimeout) clearTimeout(saveTimeout)
         saveTimeout = setTimeout(()=> {
             changeSettings($settings)

@@ -27,7 +27,7 @@ function createWindow () {
     // win.webContents.openDevTools()
 
     win.on('closed', ()=> {
-        watcher.close()
+        // watcher.close()
         win = null
     })
 

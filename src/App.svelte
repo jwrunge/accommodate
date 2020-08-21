@@ -34,11 +34,15 @@
     let checkForPagePassword = (page)=> {
         let pwords = []
 
-        $settings.passwords.forEach(pw=>{
-            pw.pages.forEach(p=>{
-                if(p.value == page) pwords.push(pw.password)
+        if($settings.passwords && Array.isArray($settings.passwords)) {
+            $settings.passwords.forEach(pw=>{
+                if(pw) {
+                    pw.pages.forEach(p=>{
+                        if(p.value == page) pwords.push(pw.password)
+                    })
+                }
             })
-        })
+        }
 
         return pwords
     }

@@ -18,9 +18,9 @@
     let previewModalOpen = false
     let docErrorModalOpen = false
 
-    let headerData = fs.existsSync(root + '/appdata/header.accom') ? fs.readFileSync(root + '/appdata/header.accom') : ""
-    let bodyData = fs.existsSync(root + '/appdata/body.accom') ? fs.readFileSync(root + '/appdata/body.accom') : ""
-    let footerData = fs.existsSync(root + '/appdata/footer.accom') ? fs.readFileSync(root + '/appdata/footer.accom') : ""
+    let headerData = fs.existsSync(root + '/accommodateData/header.accom') ? fs.readFileSync(root + '/accommodateData/header.accom') : ""
+    let bodyData = fs.existsSync(root + '/accommodateData/body.accom') ? fs.readFileSync(root + '/accommodateData/body.accom') : ""
+    let footerData = fs.existsSync(root + '/accommodateData/footer.accom') ? fs.readFileSync(root + '/accommodateData/footer.accom') : ""
 
     let sampleData = [
         { key: "first name", value: "Sample"},
@@ -40,9 +40,9 @@
         sampleData[3].value = (today.getMonth() + 1) + "/" + today.getDate() + "/" + today.getFullYear()
         
         printPDF(headerData, bodyData, footerData, sampleData).then(pdf=> {
-            fs.writeFileSync(root + '/appdata/doc.pdf', pdf)
+            fs.writeFileSync(root + '/accommodateData/doc.pdf', pdf)
             previewModalOpen = false
-            shell.openItem(root + "/appdata/doc.pdf")
+            shell.openItem(root + "/accommodateData/doc.pdf")
         })
         .catch(e=> {
             console.log(e)
@@ -52,17 +52,17 @@
     }
 
     let saveHeader = (e)=> {
-        fs.writeFileSync(root + '/appdata/header.accom', e.detail)
+        fs.writeFileSync(root + '/accommodateData/header.accom', e.detail)
         headerData = e.detail
     }
 
     let saveBody = (e)=> {
-        fs.writeFileSync(root + '/appdata/body.accom', e.detail)
+        fs.writeFileSync(root + '/accommodateData/body.accom', e.detail)
         bodyData = e.detail
     }
 
     let saveFooter = (e)=> {
-        fs.writeFileSync(root + '/appdata/footer.accom', e.detail)
+        fs.writeFileSync(root + '/accommodateData/footer.accom', e.detail)
         footerData = e.detail
     }
     

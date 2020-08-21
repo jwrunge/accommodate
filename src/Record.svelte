@@ -31,8 +31,8 @@
         ]
 
         printPDF(" ", bodyData, " ", formattedData).then(pdf=> {
-            fs.writeFileSync(root + '/appdata/target.pdf', pdf)
-            shell.openItem(root + "/appdata/target.pdf")
+            fs.writeFileSync(root + '/accommodateData/target.pdf', pdf)
+            shell.openItem(root + "/accommodateData/target.pdf")
         })
         .catch(e=> {
             console.log(e)
@@ -49,7 +49,7 @@
             record = result
         })
 
-        bodyData = fs.existsSync(root + '/appdata/body.accom') ? fs.readFileSync(root + '/appdata/body.accom') : ""
+        bodyData = fs.existsSync(root + '/accommodateData/body.accom') ? fs.readFileSync(root + '/accommodateData/body.accom') : ""
     })
 
 </script>
