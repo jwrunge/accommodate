@@ -73,6 +73,7 @@
     }
 
     let accoms = []
+    let customAccoms = []
     let studentNotes = ""
     let dateIssued = new Date(Date.now())
     let dateIssuedNext = dateIssued
@@ -81,11 +82,12 @@
 
     let sortAccoms = ev=> { selectedAccoms = ev.detail }
 
-    $: selectedAccoms = accoms.length ? accoms.filter((accom)=>{ return accom.selected === true }) : []
+    $: selectedAccoms = [
+        ...(accoms.length ? accoms.filter((accom)=>{ return accom.selected === true }) : []),
+        ...customAccoms.filter((accom)=>{ return accom.selected === true })
+    ]
 
     let studentNotesHighlighted = false
-
-    $: disableUpdated = dateIssued.getMonth() == new Date(Date.now()).getMonth() && dateIssued.getDate() == new Date(Date.now()).getDate() && dateIssued.getFullYear() == new Date(Date.now()).getFullYear()
 
     let months = [
         "January",
@@ -151,6 +153,7 @@
         else saveLOA({ student, accoms: selectedAccoms, studentNotes, dateUpdated, dateIssued }, $settings.databasedir).then(()=>{
             showSavedModal = true
         })
+        .catch(e=>{ alert(e) })
     }
 
     let endSave = ()=> {
@@ -161,6 +164,11 @@
     let loadStudent = (inputstudent)=> {
         loadLOA(inputstudent, $settings.databasedir).then((result)=>{
             student = result.student || {}
+
+            //Value to store accommodations not in db (custom)
+            customAccoms = []
+
+            //Check through accommodations list and set selected if found in result.accoms
             accoms.forEach((accom)=>{
                 accom.selected = (()=> { 
                     let returnVal = false
@@ -175,7 +183,14 @@
                 })()
             })
 
-            selectedAccoms = selectedAccoms = accoms.filter((accom)=>{ return accom.selected === true })
+            //Check through loaded accoms and add to customAccoms if necessary
+            result.accoms.forEach((raccom)=>{
+                if(/CUSTOM-/.test(raccom._id)) {
+                    customAccoms.push({...raccom, selected: true})
+                }
+            })
+
+            selectedAccoms = [...customAccoms, ...accoms.filter((accom)=>{ return accom.selected === true })]
             studentNotes = result.studentNotes || ""
             dateIssued = result.dateIssued || new Date()
             dateUpdated = result.dateUpdated || new Date()
@@ -208,6 +223,8 @@
         selectedAccoms = []
         studentNotes = ""
 
+        customAccoms = []
+
         LOAnew = true
 
         dateIssued = new Date(Date.now())
@@ -238,8 +255,8 @@
 
     let setCustomAccom = ()=> {
         accomCreatorOpen = false
-        accoms.push({...newAccom, _id: accoms.length + 1})
-        accoms = accoms
+        customAccoms.push({...newAccom, _id: "CUSTOM-" + accoms.length + 1})
+        customAccoms = customAccoms
     }
 
 </script>
@@ -307,6 +324,8 @@
         text-align: center;
         border-radius: 5px;
         cursor: pointer;
+        width: 30em;
+        max-width: 40vw;
     }
 
     #accoms-modal-list li:hover {
@@ -365,8 +384,8 @@
     <form>
         <div class="form-halves">
             <label for="issued">Date</label>
-            <Datepicker style={style} start={new Date(2020, 0, 1)} end={new Date(Date.now())} bind:selected={dateUpdated}>
-                <input type='text' value={months[new Date(Date.now()).getMonth()] + " " + new Date(Date.now()).getDate() + ", " + dateUpdated.getFullYear()}>
+            <Datepicker style={style} end={new Date(Date.now())} bind:selected={dateUpdated}>
+                <input type='text' value={months[dateUpdated.getMonth()] + " " + dateUpdated.getDate() + ", " + dateUpdated.getFullYear()}>
             </Datepicker>
         </div>
 
@@ -388,18 +407,6 @@
             <h3>Approved {formatText($settings.services, true, true)}</h3>
             <ul id='accoms-list'>
                 {#if selectedAccoms.length > 0}
-                    <!-- {#each selectedAccoms as accom}
-                        <li class='whitebox '>
-                            {#if accom.type && accom.type == 'editable'}
-                                <input type='text' class='h4' bind:value={accom.name} placeholder="Custom Accommodation Title">
-                                <input type='text' bind:value={accom.content} placeholder="Custom accommodation description">
-                            {:else}
-                                <h4>{accom.name}</h4>
-                                <p>{abbreviate(accom.content, 150)}</p>
-                            {/if}
-                            <div class='close' on:click={()=>{ accom.selected = false; accoms = accoms }}>&times;</div>
-                        </li>
-                    {/each} -->
                     <SortableList 
                         list={selectedAccoms} 
                         key="_id"
@@ -440,7 +447,7 @@
     {#if showSearchModal}
         <Modal on:forceClose={()=>{ showSearchModal = false; }}>
             <h3>Find a {formatText($settings.students, false, true)}</h3>
-            <p>Search by ID or first and last name.</p>
+            <p style="max-width: 30em;">Search by ID or first and last name. You can leave out parameters, but you must spell names correctly and fully match names and IDs (case-sensitive!).</p>
             <form>
                 <div class="form-halves">
                     <label for="search-id">ID#</label>
@@ -508,8 +515,8 @@
         <Modal on:forceClose={()=>{ showAccomsModal = false }}>
             <h3>Select {formatText($settings.services, true, true)}</h3>
             <ul id='accoms-modal-list'>
-                {#each accoms as accom}
-                    <li class:selected={accom.selected} on:click={()=>{accom.selected = !accom.selected }}>{abbreviate(accom.name, 25)}</li>
+                {#each [...accoms, ...customAccoms] as accom}
+                    <li class:selected={accom.selected} on:click={()=>{accom.selected = !accom.selected }} title={accom.name}>{abbreviate(accom.name, 100)}</li>
                 {/each}
             </ul>
             <p>...or <a href="custom" on:click|preventDefault={addCustomAccom}>add a custom {formatText($settings.services, false, false)}.</a></p>
@@ -518,7 +525,7 @@
     {/if}
 
     {#if accomCreatorOpen}
-        <Modal on:forceClose={()=>{ accomCreatorOpen = false; newAccom = { name: "", content: "" } }}>
+        <Modal on:forceClose={()=>{ accomCreatorOpen = false; newAccom = { _id: "", name: "", content: "" } }}>
             <h3 class='extend'>{formatText($settings.services, false, true)} Details</h3>
             <form id='new-accom-form'>
                 <div class="form-halves2">

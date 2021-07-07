@@ -14,20 +14,22 @@ function createWindow () {
 
     // Create the browser window.
     let win = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 1024,
+        height: 768,
         webPreferences: {
-            nodeIntegration: true
+            nodeIntegration: true,
+            devTools: true
         }
     })
 
     // and load the index.html of the app.
     win.loadFile('./index.html')
+    win.setMenu(null)
 
     // win.webContents.openDevTools()
 
     win.on('closed', ()=> {
-        watcher.close()
+        // watcher.close()
         win = null
     })
 

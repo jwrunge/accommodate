@@ -1,5 +1,4 @@
 <script>
-    import { fly, scale } from 'svelte/transition'
     import {onMount, onDestroy} from 'svelte'
     import { settings, formatText } from './store.js'
     import { createEventDispatcher } from 'svelte';
@@ -66,8 +65,8 @@
 
     .variableButton {
         padding: .25em .5em;
-        background-color: gray;
-        color: white;
+        background-color: #8EE3EF;
+        color: #37718E;
         font-weight: bold;
         border-radius: 5px;
         margin: 0 .25em;
@@ -75,8 +74,7 @@
 
     .variableButton:hover {
         cursor: pointer;
-        background-color: lightgray;
-        color: black;
+        filter: brightness(1.2);
     }
 </style>
 
@@ -87,21 +85,22 @@
     <p>The footer appears at the bottom of each page.</p>
 {/if} -->
 
-<p>Variables: 
+<p>Variables:</p>
+<div>
     <span on:click={()=> {insertVariable("${first name}")}} class='variableButton'>First name</span>
     <span on:click={()=> {insertVariable("${last name}")}} class='variableButton'>Last name</span>
     <span on:click={()=> {insertVariable("${id}")}} class='variableButton'>ID</span>
     <span on:click={()=> {insertVariable("${date}")}} class='variableButton'>Date</span>
     <span on:click={()=> {insertVariable("${" + formatText($settings.services, true, false) + "}")}} class='variableButton'>{formatText($settings.services, true, true)}</span>
     <span on:click={()=> {insertVariable("${" + formatText($settings.students, false, false) + " notes}")}} class='variableButton'>{formatText($settings.students, false, true)} notes</span>
-</p>
+</div>
 
 <div id="container">
     <div id='editor'>{@html content}</div>
 </div>
 
 <div class='inline'>
-    <button class='blue' type='submit' on:click|preventDefault={()=> {dispatch('save', tiny.get("editor").getContent()); dispatch('forceClose')} }>Save</button>
-    <button class='blue' type='submit' on:click|preventDefault={()=> {dispatch('preview')}}>Preview</button>
-    <button type='submit' on:click|preventDefault={()=> {dispatch('forceClose')} }>Cancel</button>
+    <button class='blue' type='submit' on:click|preventDefault={()=> {dispatch('save', tiny.get("editor").getContent()); } }>Save</button>
+    <!-- <button class='blue' type='submit' on:click|preventDefault={()=> {dispatch('preview')}}>Preview</button> -->
+    <!-- <button type='submit' on:click|preventDefault={()=> {dispatch('forceClose')} }>Cancel</button> -->
 </div>

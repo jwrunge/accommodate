@@ -1,17 +1,20 @@
-import svelte from 'rollup-plugin-svelte';
-import resolve from 'rollup-plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
-import livereload from 'rollup-plugin-livereload';
-import { terser } from 'rollup-plugin-terser';
-import babel from 'rollup-plugin-babel'
-import postcss from 'rollup-plugin-postcss'
-import sass from 'node-sass'
-import autoprefixer from 'autoprefixer'
-import cssnano from 'cssnano'
-import postcssPresetEnv from 'postcss-preset-env'
+import svelte from 'rollup-plugin-svelte' 
+import commonjs from '@rollup/plugin-commonjs' 
+import resolve from '@rollup/plugin-node-resolve' 
+import livereload from 'rollup-plugin-livereload' 
+import { terser } from 'rollup-plugin-terser' 
 import sveltePreprocess from 'svelte-preprocess'
+import babel from "@rollup/plugin-babel"
+import css from 'rollup-plugin-css-only'
 
-const production = !process.env.ROLLUP_WATCH;
+const writeFileSync = require('fs').writeFileSync
+
+const prod = !process.env.ROLLUP_WATCH
+const babelSettings = {
+    babelHelpers: 'runtime',
+    extensions: [ '.js', '.mjs', '.html', '.svelte' ],
+    plugins: ['@babel/plugin-external-helpers', '@babel/plugin-transform-runtime', '@babel/plugin-proposal-object-rest-spread']
+}
 
 export default {
 	input: 'src/main.js',
@@ -23,60 +26,39 @@ export default {
 	},
 	plugins: [
 		svelte({
-			// enable run-time checks when not in production
-			dev: !production,
+			preprocess: sveltePreprocess(),
+		}),
 
-			// we'll extract any component CSS out into
-			// a separate file — better for performance
-			css: css => {
-				css.write('public/appbundle.css');
+		css({
+			output: (styles)=> {
+				writeFileSync("public/appBundle.css", styles)
 			},
-
-			preprocess: sveltePreprocess({
-				postcss: {
-					plugins: [
-						postcssPresetEnv({
-							autoprefixer: { grid: true }
-						})
-					]
-				},
-				scss: true
-			})
 		}),
 
-		babel({
-			extensions: [ '.js', '.mjs', '.html', '.svelte' ]
-		}),
-
-		postcss({
-			preprocessor: (content, id) => new Promise((resolve, reject)=>{
-				const result = sass.renderSync({ file: id })
-				resolve({ code: result.css.toString() })
-			}),
-            extensions: [ '.css', '.scss' ],
-            extract: true,
-            sourceMap: true,
-            plugins: [
-                autoprefixer(),
-                cssnano()
-            ]
-        }),
+		babel(babelSettings),
 
 		// If you have external dependencies installed from
 		// npm, you'll most likely need these plugins. In
 		// some cases you'll need additional configuration —
 		// consult the documentation for details:
 		// https://github.com/rollup/rollup-plugin-commonjs
-		resolve({ browser: true }),
+		resolve({ 
+			browser: true,
+			dedupe: ['svelte']
+		}),
 		commonjs(),
 
-		// Watch the directory and refresh the
-		// browser on changes when not in production
-		!production && livereload(['public', 'src']),
+		prod && babel(babelSettings),
+
+		//Watch 'public' directory and refresh when not in production
+		!prod && livereload({
+			watch: "public/",
+			verbose: false
+		}),
 
 		// If we're building for production (npm run build
 		// instead of npm run dev), minify
-		production && terser()
+		prod && terser()
 	],
 	watch: {
 		clearScreen: false

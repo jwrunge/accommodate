@@ -2,17 +2,23 @@ import { writable } from 'svelte/store'
 const fs = require('fs')
 const app = require('electron').remote.app
 
-const root = app.getAppPath()
+const root = app.getPath('home')
 
 export const settings = writable({})
-if(fs.existsSync(root + '/appdata/appsettings.json')) {
-    settings.set(JSON.parse(fs.readFileSync(root + '/appdata/appsettings.json')))
+if(fs.existsSync(root + '/accommodate/appsettings.json')) {
+    settings.set(JSON.parse(fs.readFileSync(root + '/accommodate/appsettings.json')))
 }
 else {
+    if(!fs.existsSync(root + '/accommodate'))
+        fs.mkdirSync(root + '/accommodate')
+
     settings.set({
         abbrev: "Notice",
         services: "Services",
-        students: "Students"
+        students: "Students",
+        databasedir: root + '/accommodate',
+        backupdir: root + '/accommodate',
+        systemdir: root + '/accommodate'
     })
 }
 
@@ -63,5 +69,5 @@ export const formatText = (str, plur = true, uc = true, allcaps = false) => {
 }
 
 export let changeSettings = (data)=> {
-    fs.writeFileSync(root + '/appdata/appsettings.json', JSON.stringify(data))
+    fs.writeFileSync(root + '/accommodate/appsettings.json', JSON.stringify(data))
 }

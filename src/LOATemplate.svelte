@@ -1,6 +1,5 @@
 <script>
     import { fly, scale } from 'svelte/transition'
-    import {onMount} from 'svelte'
     import { settings, formatText } from './store.js'
     import Modal from './widgets/Modal.svelte'
     import PDF from './PDF.svelte'
@@ -10,17 +9,18 @@
     const fs = require('fs')
     const app = require('electron').remote.app
 
-    const root = app.getAppPath()
+    // const root = app.getAppPath()
 
     let pdfHeaderModalOpen = false
     let pdfBodyModalOpen = false
     let pdfFooterModalOpen = false
     let previewModalOpen = false
     let docErrorModalOpen = false
+    let savedModalOpen = false
 
-    let headerData = fs.existsSync(root + '/appdata/header.accom') ? fs.readFileSync(root + '/appdata/header.accom') : ""
-    let bodyData = fs.existsSync(root + '/appdata/body.accom') ? fs.readFileSync(root + '/appdata/body.accom') : ""
-    let footerData = fs.existsSync(root + '/appdata/footer.accom') ? fs.readFileSync(root + '/appdata/footer.accom') : ""
+    let headerData = ""//fs.existsSync(root + '/accommodateData/header.accom') ? fs.readFileSync(root + '/accommodateData/header.accom') : ""
+    let bodyData = fs.existsSync($settings.systemdir + '/body.accom') ? fs.readFileSync($settings.systemdir + '/body.accom') : ""
+    let footerData = ""//fs.existsSync(root + '/accommodateData/footer.accom') ? fs.readFileSync(root + '/accommodateData/footer.accom') : ""
 
     let sampleData = [
         { key: "first name", value: "Sample"},
@@ -39,10 +39,10 @@
         let today = new Date()
         sampleData[3].value = (today.getMonth() + 1) + "/" + today.getDate() + "/" + today.getFullYear()
         
-        printPDF(headerData, bodyData, footerData, sampleData).then(pdf=> {
-            fs.writeFileSync(root + '/appdata/doc.pdf', pdf)
+        printPDF(headerData, bodyData, footerData, sampleData, false).then(html=> {
+            fs.writeFileSync($settings.systemdir + '/doc.html', html)
             previewModalOpen = false
-            shell.openItem(root + "/appdata/doc.pdf")
+            shell.openItem($settings.systemdir + "/doc.html")
         })
         .catch(e=> {
             console.log(e)
@@ -51,20 +51,21 @@
         })
     }
 
-    let saveHeader = (e)=> {
-        fs.writeFileSync(root + '/appdata/header.accom', e.detail)
-        headerData = e.detail
-    }
+    // let saveHeader = (e)=> {
+    //     fs.writeFileSync(root + '/accommodateData/header.accom', e.detail)
+    //     headerData = e.detail
+    // }
 
     let saveBody = (e)=> {
-        fs.writeFileSync(root + '/appdata/body.accom', e.detail)
+        fs.writeFileSync($settings.systemdir + '/body.accom', e.detail)
         bodyData = e.detail
+        savedModalOpen = true
     }
 
-    let saveFooter = (e)=> {
-        fs.writeFileSync(root + '/appdata/footer.accom', e.detail)
-        footerData = e.detail
-    }
+    // let saveFooter = (e)=> {
+    //     fs.writeFileSync(root + '/accommodateData/footer.accom', e.detail)
+    //     footerData = e.detail
+    // }
     
 </script>
 
@@ -110,10 +111,19 @@
 {/if} -->
 {#if previewModalOpen}
     <Modal on:forceClose={()=>{ previewModalOpen = false }}>
-        <h3>Building PDF</h3>
+        <h3>Rendering Output</h3>
         <p>Your preview will be available shortly!</p>
     </Modal>
 {/if}
+
+{#if savedModalOpen}
+    <Modal on:forceClose={()=>{ savedModalOpen = false }}>
+        <h3>Template saved!</h3>
+        <p>You're good to go!</p>
+        <button type='submit' class='centered blue' on:click|preventDefault={()=>{savedModalOpen = false}}>OK</button>
+    </Modal>
+{/if}
+
 {#if docErrorModalOpen}
     <Modal on:forceClose={()=>{ docErrorModalOpen = false }}>
         <h3>Whoops!</h3>

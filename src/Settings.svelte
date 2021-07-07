@@ -6,7 +6,6 @@
     import {onMount} from 'svelte'
     const fs = require('fs')
     const app = require('electron').remote.app
-    const root = app.getAppPath()
 
     const getFolder = (alter)=> {
         dialog.showOpenDialog({
@@ -36,6 +35,7 @@
     let curPassIndex = 0
 
     let save = ()=> {
+        console.log('saving')
         if(saveTimeout) clearTimeout(saveTimeout)
         saveTimeout = setTimeout(()=> {
             changeSettings($settings)
@@ -197,6 +197,7 @@
 
     <h2>Data</h2>
     <h3>Sources</h3>
+    <p>System data is located here: <a href='changepath' on:click|preventDefault={()=>{getFolder('systemdir')}}>{$settings.systemdir}</a></p>
     <p>The database files for this app are located here: <a href='changepath' on:click|preventDefault={()=>{getFolder('databasedir')}}>{$settings.databasedir}</a></p>
     <p>The database backups are located here: <a href='changepath' on:click|preventDefault={()=>{getFolder('backupdir')}}>{$settings.backupdir}</a></p>
     <h3>Manage Data</h3>

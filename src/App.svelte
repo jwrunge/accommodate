@@ -1,13 +1,11 @@
 <script>
     import { onMount } from 'svelte'
-    import { fade, fly } from 'svelte/transition'
     import Write from './Write.svelte'
     import Students from './Students.svelte'
     import Accommodations from './Accommodations.svelte'
     import Settings from './Settings.svelte'
     import Record from './Record.svelte'
     import LOATemplate from './LOATemplate.svelte'
-    import Reports from './Reports.svelte'
     import {settings, formatText} from './store.js'
     import Modal from './widgets/Modal.svelte'
 
@@ -25,7 +23,6 @@
         '#record': Record,
         '#settings': Settings,
         "#pdf": LOATemplate,
-        "#reports": Reports
     }
 
     let viewarea
@@ -34,11 +31,15 @@
     let checkForPagePassword = (page)=> {
         let pwords = []
 
-        $settings.passwords.forEach(pw=>{
-            pw.pages.forEach(p=>{
-                if(p.value == page) pwords.push(pw.password)
+        if($settings.passwords && Array.isArray($settings.passwords)) {
+            $settings.passwords.forEach(pw=>{
+                if(pw) {
+                    pw.pages.forEach(p=>{
+                        if(p.value == page) pwords.push(pw.password)
+                    })
+                }
             })
-        })
+        }
 
         return pwords
     }
@@ -180,238 +181,6 @@
 
     .constrain {
         max-width: 40em;
-    }
-
-    :global(h1, h2, h3, h4) {
-        margin-bottom: .5em;
-        margin-top: 1.5em;
-        font-family: 'Montserrat', sans-serif;
-    }
-
-    :global(h1) {
-        font-size: 3em;
-        color: #C33C54;
-    }
-
-    :global(h2) {
-        font-size: 2em;
-        color: #C33C54;
-    }
-
-    :global(h3) {
-        font-size: 1.5em;
-        color: #37718E;
-    }
-
-    :global(h4) {
-        font-size: 1em;
-        font-weight: bold;
-        color: black;
-    }
-
-    :global(label) {
-        margin-right: 1em;
-        margin-bottom: .5em;
-    }
-
-    :global(.form-halves) {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        max-width: 20em;
-        margin-bottom: .5em;
-        border-radius: .25em;
-        padding: .1em .5em;
-        position: relative;
-        left: -.5em;
-    }
-
-    :global(.form-halves:hover) {
-        background-color: #8EE3EF;
-    }
-
-    :global(.form-halves label) {
-        margin-bottom: 0;
-    }
-
-    :global(input, textarea) {
-        padding: .2em .5em;
-        font-size: 1em;
-        border-radius: .25em;
-        box-shadow: none;
-        border-width: 1px;
-        background-color: rgba(255,255,255,.5);
-    }
-
-    :global(.form-halves:hover input, input:hover, textarea:hover, input:focus, textarea:focus) {
-        background-color: white;
-        border-color: #37718E;
-    }
-
-    :global(input, textarea, button) {
-        font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
-    }
-
-    :global(a, button.just-text) {
-        color: #C33C54;
-        cursor: pointer;
-    }
-
-    :global(a:hover, button.just-text:hover) {
-        text-decoration: underline;
-    }
-
-    :global(.mt-0) {
-        margin-top: 0;
-    }
-
-    :global(.mt-2) {
-        margin-top: 2em;
-    }
-
-    :global(.mb-1) {
-        margin-bottom: 1em;
-    }
-
-    :global(button.just-text:focus) {
-        border: none;
-    }
-
-    :global(textarea) {
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    :global(input:disabled) {
-        border-color: gray;
-        color: gray;
-    }
-
-    :global(.contents-wrapper) {
-        position: fixed !important;
-    }
-
-    :global(button[type=submit]) {
-        border: none;
-        border-radius: .25em;
-        background-color: #C33C54;
-        color: white;
-        padding: .5em;
-        display: block;
-        font-weight: bold;
-        margin: 1em 0;
-        font-size: 1em;
-        cursor: pointer;
-    }
-
-    :global(button[type=submit].centered) {
-        margin: 1em auto;
-    }
-
-    :global(div.centered) {
-        text-align: center;
-    }
-
-    :global(button.blue) {
-        background-color: #37718E;
-    }
-
-    :global(button:hover) {
-        filter: brightness(1.2);
-    }
-
-    :global(.align-ends) {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    :global(.align-ends button[type=submit]) {
-        margin: 1em .5em;
-    }
-
-    :global(.close) {
-        position: absolute;
-        top: 0;
-        right: .5em;
-        color: gray;
-        font-size: 2em;
-        cursor: pointer;
-    }
-
-    :global(.edit) {
-        font-size: 1.1em;
-        right: 2em;
-        top: .4em;
-    }
-
-    :global(.close:hover) {
-        color: #C33C54;
-    }
-
-    :global(.whitebox) {
-        border-radius: 5px;
-        padding: .5em;
-        background-color: rgba(255,255,255,.5);
-        border-color: gray;
-        border-width: 1px;
-        border-style: solid;
-        margin: 0 0 .5em 0;
-        padding-right: 3em;
-        position: relative;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    :global(.whitebox:hover) {
-        background-color: white;
-        border-color: #37718E;
-    }
-
-    :global(.whitebox h4) {
-        margin-top: 0;
-        padding-right: 1em;
-    }
-
-    :global(.whitebox p) {
-        margin: 0;
-    }
-
-    :global(.remaining-characters) {
-        position: absolute;
-        top: -1.5em;
-        right: .5em;
-        z-index: 1;
-        border-radius: .25em;
-        padding: .5em;
-        background-color: #8EE3EF;
-        color: #C33C54;
-        font-weight: bold;
-        border-color: #C33C54;
-        border-width: 1px;
-        border-style: solid;
-    }
-
-    :global(#accoms-list) {
-        list-style: none;
-        padding-left: 0;
-        width: 100%;
-    }
-
-    :global(.loading) {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 90vh;
-    }
-
-    :global(.inline button) {
-        display: inline;
-        margin-right: 1em;
-    }
-
-    :global(h1 + h2, h2 + h3) {
-        margin-top: 0;
     }
 </style>
 

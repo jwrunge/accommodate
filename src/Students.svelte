@@ -1,11 +1,15 @@
 <script>
-    import { onMount } from 'svelte'
-    import { fly, scale } from 'svelte/transition'
+    import { fly } from 'svelte/transition'
     import {abbreviate, loadStudents, saveStudent, removeStudent, countStudents} from './logic/data.js'
     import Fuse from 'fuse.js'
     import { settings, formatText } from './store.js'
+    import {onMount} from "svelte"
+    import {printPDF} from "./logic/pdf"
+    const {shell} = require('electron')
+
 
     import Modal from "./widgets/Modal.svelte"
+    const fs = require('fs')
 
     let studs = []
     let searchResults = []
@@ -16,14 +20,17 @@
 
     let searchTimeout = null
     let searchBox = null
-    let studContentHighlighted = false
 
     let resultsPerPage = 10
     let page = 0
     let studentCount = 0
 
     let newStud = {
-        fname: "", lname: "", _id: ""
+        student: {fname: "", lname: "", _id: ""},
+        studentNotes:"",
+        dateUpdated:null,
+        dateIssued:null,
+        accoms:[]
     }
     let toDelete = ""
 
@@ -48,7 +55,11 @@
                     studs = studsLoaded
                     studCreatorOpen = false
                     newStud = {
-                        fname: "", lname: "", _id: ""
+                        student: {fname: "", lname: "", _id: ""},
+                        studentNotes:"",
+                        dateUpdated:null,
+                        dateIssued:null,
+                        accoms:[]
                     }
 
                     fuse = new Fuse(studs, { keys: ["student.fname", "student.lname", "student._id"] })
@@ -79,15 +90,46 @@
         })
     }
 
+    let bodyData
+    function printDoc(data) {
+        let formattedData = [
+            { key: "first name", value: data.student.fname},
+            { key: "last name", value: data.student.lname},
+            { key: "id", value: data.student._id },
+            { key: "date", value: (new Date(data.dateUpdated).getMonth() + 1) + "/" + new Date(data.dateUpdated).getDate() + "/" + new Date(data.dateUpdated).getFullYear() },
+            { key: formatText($settings.services, true, false), value: data.accoms || "None listed" },
+            { key: formatText($settings.students, false, false) + " notes", value: data.studentNotes || "None provided" },
+        ]
+
+        printPDF(" ", bodyData, " ", formattedData).then(html=> {
+            fs.writeFileSync($settings.systemdir + '/target.html', html)
+            shell.openItem($settings.systemdir + "/target.html")
+        })
+        .catch(e=> {
+            alert(e)
+            previewModalOpen = false
+            docErrorModalOpen = true
+        })
+
+        currentRecord = {}
+    }
+
+    onMount(()=> {
+        bodyData = fs.existsSync($settings.systemdir + '/body.accom') ? fs.readFileSync($settings.systemdir + '/body.accom') : ""
+    })
+
 </script>
 
 <style>
-    .student a {
-        display: block;
+    .bottom-links {
         margin-top: .5em;
         text-align: right;
         position: relative;
         left: 2em;
+    }
+
+    .bottom-links a + a {
+        margin-left: 1em;
     }
 
     .pagination {
@@ -141,9 +183,14 @@
                 <div class='student whitebox'>
                     <h4>{loa.student.lname + ", " + loa.student.fname + " (" + loa.student._id + ")"}</h4>
                     <p>{abbreviate("Current accommodations: " + ((loa.accomsList && loa.accomsList.length) ? loa.accomsList.join(", ") : "none listed"), 200)}</p>
-                    <a href={"#record/" + loa.student._id}>See record</a>
+                    <div class="bottom-links">
+                        {#if loa.accomsList && loa.accomsList.length}
+                            <a href="print" on:click|preventDefault={()=>printDoc(loa)}>Print current</a>
+                            <a href={"#record/" + loa.student._id}>See record</a>
+                        {/if}
+                    </div>
                     <div class='close' on:click={()=>{ removeStud(loa.student._id) }}>&times;</div>
-                    <div class='close edit' on:click={()=>{ newStud = loa.student; studCreatorOpen = true }}>&#9998;</div>
+                    <div class='close edit' on:click={()=>{ newStud = loa; studCreatorOpen = true }}>&#9998;</div>
                 </div>
             {/each}
         {:else}
@@ -153,20 +200,25 @@
 {/await}
 
 {#if studCreatorOpen}
-    <Modal on:forceClose={()=>{ studCreatorOpen = false; newStud = { fname: "", lname: "", _id: "" } }}>
+    <Modal on:forceClose={()=>{ studCreatorOpen = false; newStud = {
+        student: { fname: "", lname: "", _id: "" }, studentNotes:"",
+            dateUpdated:null,
+            dateIssued:null,
+            accoms:[]} }
+        }>
         <h3>{formatText($settings.students, false, true)} Details</h3>
         <form id='new-stud-form'>
             <div class="form-halves">
                 <label for='fname'>First name</label>
-                <input type="text" id='fname' bind:value={newStud.fname}>
+                <input type="text" id='fname' bind:value={newStud.student.fname}>
             </div>
             <div class="form-halves">
                 <label for='fname'>Last name</label>
-                <input type="text" id='fname' bind:value={newStud.lname}>
+                <input type="text" id='fname' bind:value={newStud.student.lname}>
             </div>
             <div class="form-halves">
                 <label for='id'>{formatText($settings.students, false, true)} ID</label>
-                <input type="text" id='id' bind:value={newStud._id}>
+                <input type="text" id='id' bind:value={newStud.student._id}>
             </div>
 
             <button class='centered blue' type='submit' on:click|preventDefault={()=> {save(); studCreatorOpen = false} }>OK</button>

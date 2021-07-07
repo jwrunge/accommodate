@@ -20,18 +20,11 @@ function saveLOA(data, datadir = root + '/data') {
             filename: datadir + '/records.db',
             autoload: true
         })
-
-        let shrinkAccoms = data.accoms.map((accom)=> {
-            return { _id: accom._id, name: accom.name }
-        })
-
-        let {accoms, ...shrinkData} = data
-        shrinkData.accoms = shrinkAccoms
     
         db.update(
             { "student._id": data.student._id }, //Find
             {
-                $set: shrinkData
+                $set: data
             }, //Update data
             { upsert: true }, //options
             (err)=>{
@@ -221,8 +214,8 @@ function saveStudent(data, datadir = root + '/data') {
         })
     
         db.update(
-            { "student._id": data._id }, //Find
-            {student: data}, //Update data
+            { "student._id": data.student._id }, //Find
+            data, //Update data
             { upsert: true }, //options
             (err)=>{
                 if(err) reject()
